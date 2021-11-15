@@ -1,6 +1,13 @@
+#Virtual Router basic rules for no_fall_color_zone
 As per [IBM Cloud IP Ranges](https://cloud.ibm.com/docs/hardware-firewall-shared?topic=hardware-firewall-shared-ibm-cloud-ip-ranges) the setup is created to _Only_ connect with London, Amsterdam, Frankfurt, Dallas and Washington D.C IBM Cloud regions at the startup stage. To maintain privacy requirements, this should be updated to only avail services from London region.
 
-#Virtual Router basic rules for no_fall_color_zone
+###Rules logic
+#### First set
+Rule 1. Instances on a specific routed-through-VLAN for accessing VPCs via separate transit gateways, can only SSH (or connect via RDP, VNC, cluster console or configs) to such environments with PROVISOR rules.
+an _out_ rule on _virtual interface_ PROVISOR-VIF should check 
+#### Second set
+Rule 1. All Servers should be allowed for SERVICE-NETWORK rules
+
 
 ### First the global state match rules
 set security firewall global-state-policy icmp
@@ -9,6 +16,7 @@ set security firewall global-state-policy udp
 
 ### Allow all Service Networks both Softlayer(SL) and Public(PB)
 #### Private (All ICMP, TCP/UDP)
+set security firewall name SL-SERVICE-NETWORK-ALLOW default-action drop
 set security firewall name SL-SERVICE-NETWORK-ALLOW rule 1 destination address 166.8.0.0/14
 set security firewall name SL-SERVICE-NETWORK-ALLOW rule 1 description All
 set security firewall name SL-SERVICE-NETWORK-ALLOW rule 1 action accept
@@ -89,6 +97,7 @@ set security firewall name SL-SERVICE-NETWORK-ALLOW rule 26 description wdc07
 set security firewall name SL-SERVICE-NETWORK-ALLOW rule 26 action accept
 
 #### Public (All ICMP, TCP/UDP)
+set security firewall name PB-SERVICE-NETWORK-ALLOW default-action drop
 set security firewall name PB-SERVICE-NETWORK-ALLOW rule 1 action accept
 set security firewall name PB-SERVICE-NETWORK-ALLOW rule 1 destination address 5.10.118.0/23 
 set security firewall name PB-SERVICE-NETWORK-ALLOW rule 1 description lon02
@@ -157,6 +166,7 @@ set security firewall name PB-SERVICE-NETWORK-ALLOW rule 22 destination address 
 set security firewall name PB-SERVICE-NETWORK-ALLOW rule 22 description wdc07
 ### Allow Load Balancer IPs for Softlayer(SL)
 #### All TCP/UDP ports
+set security firewall name PB-LB-IPs-ALLOW default-action drop
 set security firewall name PB-LB-IPs-ALLOW rule 1 action accept
 set security firewall name PB-LB-IPs-ALLOW rule 1 description lon02
 set security firewall name PB-LB-IPs-ALLOW rule 1 destination address 5.10.117.0/24
@@ -294,6 +304,7 @@ set security firewall name PB-LB-IPs-ALLOW rule 27 protocol-group mixed-proto
 set security firewall name PB-LB-IPs-ALLOW rule 27 state enable
 
 ### SSL VPN Data Center
+set security firewall name SSL-VPN-DC-ALLOW default-action drop
 set security firewall name SSL-VPN-DC-ALLOW rule 1 action accept
 set security firewall name SSL-VPN-DC-ALLOW rule 1 description lon02
 set security firewall name SSL-VPN-DC-ALLOW rule 1 destination address 10.2.220.0/24
@@ -359,6 +370,7 @@ set resources group port-group EVAULT-ALLOW-TCP port 2546
 set resources group port-group EVAULT-ALLOW-TCP port 8086
 set resources group port-group EVAULT-ALLOW-TCP port 8087
 
+set security firewall name SVC-EVAULT-ALLOW default-action drop
 set security firewall name SVC-EVAULT-ALLOW rule 1 action accept
 set security firewall name SVC-EVAULT-ALLOW rule 1 description LON02
 set security firewall name SVC-EVAULT-ALLOW rule 1 destination address 10.1.214.0/24
@@ -522,6 +534,7 @@ set resources group port-group FILEBLK-ALLOW-MIXED port 635
 set resources group port-group FILEBLK-ALLOW-MIXED port 4045-4048
 set resources group port-group FILEBLK-ALLOW-MIXED port 65200
 
+set security firewall name SVC-FILEBLK-ALLOW default-action drop
 set security firewall name SVC-FILEBLK-ALLOW rule 1 action accept
 set security firewall name SVC-FILEBLK-ALLOW rule 1 description LON02
 set security firewall name SVC-FILEBLK-ALLOW rule 1 destination address 10.1.222.0/24
@@ -658,6 +671,7 @@ set security firewall name SVC-FILEBLK-ALLOW rule 27 destination address 10.200.
 set security firewall name SVC-FILEBLK-ALLOW rule 27 protocol-group mixed-proto
 set security firewall name SVC-FILEBLK-ALLOW rule 27 state enable
 #### Advance Monitoring (NimSoft) rule
+set security firewall name SVC-ADVMON-ALLOW default-action drop
 set security firewall name SVC-ADVMON-ALLOW rule 1 action accept
 set security firewall name SVC-ADVMON-ALLOW rule 1 description LON02
 set security firewall name SVC-ADVMON-ALLOW rule 1 destination address 10.1.211.0/24
