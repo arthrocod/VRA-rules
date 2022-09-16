@@ -1,4 +1,31 @@
-Set / checking bonding 
+There are certain default settings that you don't need to touch unless there are sync issues
+```
+set service https listen-address '10.111.222.61'
+set service ssh port '22'
+set system config-management commit-revisions '20'
+set system console device ttyS0 speed '19200'
+set system domain-name 'myaccount.cloud'
+set system host-name 'gateway'
+set system login user root authentication encrypted-password '********'
+set system login user root level 'admin'
+set system login user vyatta authentication encrypted-password '********'
+set system login user vyatta level 'superuser'
+set system name-server '10.0.80.11'
+set system name-server '10.0.80.12'
+set system ntp server '0.vyatta.pool.ntp.org'
+set system ntp server '1.vyatta.pool.ntp.org'
+set system ntp server '2.vyatta.pool.ntp.org'
+set system ntp server 'time.service.networklayer.com'
+set system package auto-sync '1'
+set system package repository community components 'main'
+set system package repository community distribution 'stable'
+set system package repository community url 'http://packages.vyatta.com/vyatta'
+set system syslog global facility all level 'notice'
+set system syslog global facility protocols level 'debug'
+set system time-zone 'Europe/Paris'
+```
+
+Set / checking bonding,nostly dp0s0 isn't bonding member.
 ```
 set interfaces dataplane dp0s0 hardware mac 'Xx:11:Yy:22:Zz:33'
 set interfaces dataplane dp0s1 bond-group 'dp0bond0'
@@ -29,7 +56,7 @@ set interfaces bonding dp0bond1 vrrp vrrp-group 1 'rfc-compatibility'
 set interfaces bonding dp0bond1 vrrp vrrp-group 1 sync-group 'vgroup1'
 set interfaces bonding dp0bond1 vrrp vrrp-group 1 virtual-address '137.10.68.162/29'
 ```
-By default the whole plane is in 1 VRRP Group as seen above, as you add routed through VLANs from Cloud Interface, you can see them as below (if they do not appear, you probably have to add them as shows).
+By default the whole plane is in 1 VRRP Group as seen above, as you add routed through VLANs from Cloud Interface, you can see them as below (if they do not appear, you probably have to add them as shows). Since these act as firewall gateway devices, the VLAN gateway address is added as the `v`irtual `i`nter`f`ace. 10dots are added to dp0bond0 while internet facing are added to dp1bond1.
 ```
 set interfaces bonding dp0bond0 vif 2011 address '10.123.231.65/26'
 set interfaces bonding dp0bond0 vif 2013 address '10.213.22.193/26'
@@ -40,6 +67,35 @@ set interfaces bonding dp0bond0 vif 2020 vlan '2020'
 
 set interfaces bonding dp0bond1 vif 1011 address '219.152.21.33/28'
 set interfaces bonding dp0bond1 vif 1011 vlan '1011'
+```
+If your appliance has high availability (not a standalone gateway); each VIF needs to be added to the VRRP group. This is further managed by a /29 address  for proper routing of the VLAN from primary to secondary gateway device. e.g. 
+```
+set interfaces bonding dp0bond0 vif 2015 address 192.168.29.29/30
+set interfaces bonding dp0bond0 vif 2015 vrrp vrrp-group 1 preempt false
+set interfaces bonding dp0bond0 vif 2015 vrrp vrrp-group 1 priority 254
+set interfaces bonding dp0bond0 vif 2015 vrrp vrrp-group 1 rfc-compatibility
+set interfaces bonding dp0bond0 vif 2015 vrrp vrrp-group 1 sync-group vgroup1
+set interfaces bonding dp0bond0 vif 2015 vrrp vrrp-group 1 virtual-address 10.45.99.193/26
+```
+It is a good time to check the NAT rules if there are any, because by default there will be one for 
+```
+set service nat 'destination'
+set service nat source rule 10 description 'NAT Exclude for SRTA VPN'
+set service nat source rule 10 destination address '129.39.141.0/24'
+set service nat source rule 10 'exclude'
+set service nat source rule 10 outbound-interface 'dp0bond1'
+set service nat source rule 10 source address '10.128.0.0/9'
+set service nat source rule 20 description 'NAT Exclude for SRTA VPN'
+set service nat source rule 20 destination address '158.98.237.0/24'
+set service nat source rule 20 'exclude'
+set service nat source rule 20 outbound-interface 'dp0bond1'
+set service nat source rule 20 source address '10.128.0.0/9'
+set service nat source rule 100 description 'Default Hide NAT to Internet'
+set service nat source rule 100 destination address '0.0.0.0/0'
+set service nat source rule 100 outbound-interface 'dp0bond1'
+set service nat source rule 100 source address '10.128.0.0/9'
+set service nat source rule 100 translation address 'masquerade'
+
 ```
 Describe what's all below
 ```
@@ -403,45 +459,4 @@ set security zone-policy zone INSIDE to WINDEVEL firewall 'INSIDE-TO-APP'
 
 set security zone-policy zone WINDEVEL to TUNNEL firewall 'APP-TO-TUNNEL'
 set security zone-policy zone TUNNEL to WINDEVEL firewall 'TUNNEL-TO-APP'
-
-
-set service https listen-address '10.111.222.61'
-set service nat 'destination'
-set service nat source rule 10 description 'NAT Exclude for SRTA VPN'
-set service nat source rule 10 destination address '129.39.141.0/24'
-set service nat source rule 10 'exclude'
-set service nat source rule 10 outbound-interface 'dp0bond1'
-set service nat source rule 10 source address '10.128.0.0/9'
-set service nat source rule 20 description 'NAT Exclude for SRTA VPN'
-set service nat source rule 20 destination address '158.98.237.0/24'
-set service nat source rule 20 'exclude'
-set service nat source rule 20 outbound-interface 'dp0bond1'
-set service nat source rule 20 source address '10.128.0.0/9'
-set service nat source rule 100 description 'Default Hide NAT to Internet'
-set service nat source rule 100 destination address '0.0.0.0/0'
-set service nat source rule 100 outbound-interface 'dp0bond1'
-set service nat source rule 100 source address '10.128.0.0/9'
-set service nat source rule 100 translation address 'masquerade'
-set service ssh port '22'
-set system config-management commit-revisions '20'
-set system console device ttyS0 speed '19200'
-set system domain-name 'bpce.cloud'
-set system host-name 'gateway'
-set system login user root authentication encrypted-password '********'
-set system login user root level 'admin'
-set system login user vyatta authentication encrypted-password '********'
-set system login user vyatta level 'superuser'
-set system name-server '10.0.80.11'
-set system name-server '10.0.80.12'
-set system ntp server '0.vyatta.pool.ntp.org'
-set system ntp server '1.vyatta.pool.ntp.org'
-set system ntp server '2.vyatta.pool.ntp.org'
-set system ntp server 'time.service.networklayer.com'
-set system package auto-sync '1'
-set system package repository community components 'main'
-set system package repository community distribution 'stable'
-set system package repository community url 'http://packages.vyatta.com/vyatta'
-set system syslog global facility all level 'notice'
-set system syslog global facility protocols level 'debug'
-set system time-zone 'Europe/Paris'
 ```
